@@ -1,7 +1,11 @@
 const request = require('supertest');
 const app = require('../src/app');
 const User = require('../src/models/user');
-const { userOne, userOneId, setupDatabase } = require('./fixtures/db');
+const {
+  userOne,
+  userOneId,
+  setupDatabase
+} = require('./fixtures/db');
 
 beforeEach(setupDatabase);
 
@@ -113,3 +117,41 @@ test('Should not update invalid user fields', async () => {
     })
     .expect(400);
 });
+
+test('Should not signup user with invalid email', async () => {
+  await request(app).post('/users/login').send({
+    email: 'netaron@oriwijn.com',
+    password: userOne.password
+  }).expect(400)
+})
+
+test('Should not signup user with invalid password ', async () => {
+  await request(app).post('/users/login').send({
+    email: userOne.email,
+    password: 'Testing@@123'
+  }).expect(400)
+
+})
+
+test('Should not update user if unauthenticated', async () => {
+  await request(app).patch('/users/me').send({
+    name: 'Alexander',
+    email: 'alexandergaruba97@gmail.com'
+  }).expect(401)
+})
+
+test('Should not update user with invalid password ', async () => {
+  await request(app).patch('/users/me').set('Authorization', `Bearer ${userOne.tokens[0].token}`).send({
+    password: 'Password123'
+  }).expect(400)
+})
+
+test('Should not update user with invalid email ', async () => {
+  await request(app).patch('/users/me').set('Authorization', `Bearer ${userOne.tokens[0].token}`).send({
+    email: 'thisismyemail'
+  }).expect(400)
+})
+
+test('Should not delete user if unauthenticated ', async () => {
+  await request(app).delete('/users/me').send().expect(401)
+})
